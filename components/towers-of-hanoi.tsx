@@ -8,7 +8,7 @@ type Disk = number
 type Tower = Disk[]
 type GameState = [Tower, Tower, Tower]
 
-export default function TowersOfHanoi() {
+export function TowersOfHanoiComponent() {
   const [disks, setDisks] = useState(3)
   const [towers, setTowers] = useState<GameState>([[], [], []])
   const [selectedTower, setSelectedTower] = useState<number | null>(null)
@@ -48,12 +48,12 @@ export default function TowersOfHanoi() {
       const disk = newTowers[from].pop()!
       if (newTowers[to].length === 0 || disk < newTowers[to][newTowers[to].length - 1]) {
         newTowers[to].push(disk)
+        setMoves((prevMoves) => prevMoves + 1)
       } else {
         newTowers[from].push(disk)
       }
       return newTowers as GameState
     })
-    setMoves((prevMoves) => prevMoves + 1)
   }
 
   const handleTowerClick = (towerIndex: number) => {
@@ -70,36 +70,33 @@ export default function TowersOfHanoi() {
     }
   }
 
-  const solve = (n: number, source: number, auxiliary: number, target: number) => {
-    const stack: number[][] = [];
-
-    const hanoi = (n: number, source: number, auxiliary: number, target: number) => {
-      if (n > 0) {
-        hanoi(n - 1, source, target, auxiliary);
-        stack.push([source, target]);
-        hanoi(n - 1, auxiliary, source, target);
-      }
-    };
-
-    hanoi(n, source, auxiliary, target);
-
-    const executeMoves = (moves: number[][], delay: number) => {
-      if (moves.length === 0) return;
-      const [source, target]: any = moves.shift();
-      setTimeout(() => {
-        moveDisk(source, target);
-        executeMoves(moves, delay);
-      }, delay);
-    };
-
-    executeMoves(stack, 250);
+  const solve = async (n: number, source: number, auxiliary: number, target: number) => {
+    if (n === 1) {
+      await new Promise<void>((resolve) => {
+        solveTimeoutRef.current = setTimeout(() => {
+          if (!isSolving) return
+          moveDisk(source, target)
+          resolve()
+        }, 500)
+      })
+    } else {
+      await solve(n - 1, source, target, auxiliary)
+      await new Promise<void>((resolve) => {
+        solveTimeoutRef.current = setTimeout(() => {
+          if (!isSolving) return
+          moveDisk(source, target)
+          resolve()
+        }, 500)
+      })
+      await solve(n - 1, auxiliary, source, target)
+    }
   }
 
   const handleAutoSolve = async () => {
     setIsSolving(true)
     setIsPlaying(true)
     initializeTowers()
-    solve(disks, 0, 1, 2)
+    await solve(disks, 0, 1, 2)
     setIsSolving(false)
   }
 
@@ -130,8 +127,9 @@ export default function TowersOfHanoi() {
           {towers.map((tower, index) => (
             <div
               key={index}
-              className={`relative flex flex-col-reverse items-center w-1/4 h-full border-b-4 border-gray-400 cursor-pointer ${selectedTower === index ? "bg-gray-200" : ""
-                }`}
+              className={`relative flex flex-col-reverse items-center w-1/4 h-full border-b-4 border-gray-400 cursor-pointer ${
+                selectedTower === index ? "bg-gray-200" : ""
+              }`}
               onClick={() => handleTowerClick(index)}
             >
               {tower.map((disk, diskIndex) => (
