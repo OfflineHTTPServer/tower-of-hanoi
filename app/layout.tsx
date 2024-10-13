@@ -14,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Towers of Hanoi",
-  description: "Towers of Hanoi Implementation",
+  title: "Tower of Hanoi",
+  description: "Tower of Hanoi Implementation",
 };
 
 export default function RootLayout({
